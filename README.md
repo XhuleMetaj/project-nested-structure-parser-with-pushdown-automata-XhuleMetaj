@@ -1,7 +1,7 @@
 # Nested Structure Parser with Pushdown Automata
 
 **CEN 350 — Theory of Computation**  
-**Author:** Xhule Metaj  
+**Author:** Xhule Metaj ([XhuleMetaj](https://github.com/XhuleMetaj)) — xmetaj23@epoka.edu.al  
 **Project Code:** 93
 
 | Parameter | Value |
