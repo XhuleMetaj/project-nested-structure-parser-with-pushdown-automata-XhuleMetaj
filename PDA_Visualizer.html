@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PDA Visualizer — CEN 350</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Sora:wght@300;400;600;700;800&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #1f2d47;
+    --accent: #3b82f6;
+    --accent2: #06b6d4;
+    --accent3: #8b5cf6;
+    --green: #10b981;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Sora', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0c1a35 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 3rem;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: -40px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%);
+  }
+  .header-tag {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--accent2);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  header h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #60a5fa, #a78bfa, #22d3ee);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.1;
+  }
+  header p {
+    color: var(--muted);
+    margin-top: 0.6rem;
+    font-size: 0.9rem;
+    font-weight: 300;
+  }
+  .meta-row {
+    display: flex; gap: 1.5rem; flex-wrap: wrap;
+    margin-top: 1.2rem;
+  }
+  .meta-chip {
+    background: rgba(59,130,246,0.1);
+    border: 1px solid rgba(59,130,246,0.3);
+    border-radius: 999px;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.75rem;
+    font-family: var(--mono);
+    color: var(--accent2);
+  }
+
+  /* NAV TABS */
+  nav {
+    display: flex; gap: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    overflow-x: auto;
+  }
+  nav button {
+    background: none; border: none;
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 1rem 1.4rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  nav button:hover { color: var(--text); }
+  nav button.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* MAIN */
+  main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* SECTION TITLES */
+  .section-title {
+    font-size: 0.7rem;
+    font-family: var(--mono);
+    letter-spacing: 0.15em;
+    color: var(--accent2);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text);
+  }
+
+  /* PDA DIAGRAM */
+  #pda-svg {
+    width: 100%;
+    max-width: 860px;
+    display: block;
+    margin: 0 auto;
+    background: #0d1424;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  /* TRANSITION TABLE */
+  .tbl-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+  }
+  th {
+    background: var(--surface2);
+    color: var(--accent2);
+    font-weight: 700;
+    padding: 0.7rem 1rem;
+    text-align: left;
+    border-bottom: 2px solid var(--accent);
+    white-space: nowrap;
+  }
+  td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+  .badge-blue { background: rgba(59,130,246,0.2); color: #60a5fa; }
+  .badge-purple { background: rgba(139,92,246,0.2); color: #a78bfa; }
+  .badge-green { background: rgba(16,185,129,0.2); color: #34d399; }
+  .badge-red { background: rgba(239,68,68,0.2); color: #f87171; }
+  .badge-yellow { background: rgba(245,158,11,0.2); color: #fbbf24; }
+
+  /* SIMULATOR */
+  .sim-input-row {
+    display: flex; gap: 0.8rem;
+    margin-bottom: 1.2rem;
+    flex-wrap: wrap;
+  }
+  .sim-input-row input {
+    flex: 1; min-width: 200px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.7rem 1rem;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .sim-input-row input:focus { border-color: var(--accent); }
+  .sim-input-row button, .preset-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0.7rem 1.5rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .sim-input-row button:hover { background: #2563eb; }
+  .preset-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    font-family: var(--mono);
+  }
+  .preset-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,0.08); }
+  .presets { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.2rem; }
+  .presets-label { font-size: 0.7rem; color: var(--muted); align-self: center; font-family: var(--mono); }
+
+  /* VERDICT */
+  #verdict {
+    display: none;
+    padding: 0.8rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 1.2rem;
+    font-family: var(--mono);
+    align-items: center;
+    gap: 0.6rem;
+  }
+  #verdict.accept { display: flex; background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.4); color: #34d399; }
+  #verdict.reject { display: flex; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); color: #f87171; }
+
+  /* STACK VIZ */
+  .stack-anim {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 3px;
+    min-height: 120px;
+    justify-content: flex-start;
+  }
+  .stack-item {
+    background: var(--accent3);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 1rem;
+    font-weight: 700;
+    width: 44px; height: 44px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid rgba(255,255,255,0.15);
+    transition: all 0.3s ease;
+    animation: slideIn 0.3s ease;
+  }
+  .stack-item.bottom { background: var(--muted); font-size: 0.8rem; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* TRACE TABLE */
+  #trace-container { display: none; }
+  .trace-row {
+    display: grid;
+    grid-template-columns: 40px 80px 1fr 1fr 2fr;
+    gap: 0.5rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 6px;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .trace-row:hover { background: var(--surface2); }
+  .trace-row.header-row {
+    background: var(--surface2);
+    color: var(--accent2);
+    font-weight: 700;
+    border-radius: 8px 8px 0 0;
+    font-size: 0.7rem;
+    border-bottom: 2px solid var(--accent);
+  }
+  .trace-row.current { background: rgba(59,130,246,0.12); border-left: 3px solid var(--accent); }
+  .trace-row.accept-row { background: rgba(16,185,129,0.08); }
+  .trace-row.reject-row { background: rgba(239,68,68,0.08); }
+  .state-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    background: rgba(59,130,246,0.15);
+    color: #93c5fd;
+    font-size: 0.65rem;
+    font-weight: 700;
+  }
+  .state-badge.q-accept { background: rgba(16,185,129,0.15); color: #34d399; }
+  .state-badge.q-reject { background: rgba(239,68,68,0.15); color: #f87171; }
+  .state-badge.q-esc { background: rgba(245,158,11,0.15); color: #fbbf24; }
+
+  /* CFG */
+  .cfg-rule {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex; gap: 1rem;
+    align-items: baseline;
+  }
+  .cfg-rule:last-child { border-bottom: none; }
+  .cfg-lhs { color: var(--accent2); min-width: 30px; font-weight: 700; }
+  .cfg-arrow { color: var(--muted); }
+  .cfg-rhs { color: var(--text); flex: 1; }
+  .cfg-comment { color: var(--muted); font-size: 0.72rem; }
+
+  /* PROOF */
+  .proof-step {
+    display: flex; gap: 1rem;
+    margin-bottom: 1.2rem;
+  }
+  .proof-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: rgba(59,130,246,0.15);
+    border: 1px solid rgba(59,130,246,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+  .proof-body { flex: 1; }
+  .proof-body strong { color: var(--accent2); display: block; margin-bottom: 0.3rem; font-size: 0.85rem; }
+  .proof-body p { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+
+  /* CONTROLS */
+  .ctrl-row {
+    display: flex; gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .ctrl-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    padding: 0.45rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .ctrl-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .step-indicator { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); align-self: center; margin-left: auto; }
+
+  /* GRID LAYOUT */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media(max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+  .trace-row { grid-template-columns: 36px 70px minmax(80px,1fr) minmax(60px,1fr) 2fr; }
+  @media(max-width:600px) { .trace-row { grid-template-columns: 30px 60px 1fr 1fr; } .trace-row .act-col { display: none; } }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-tag">CEN 350 · Theory of Computation · Epoka University</div>
+  <h1>Nested Structure Parser<br>with Pushdown Automata</h1>
+  <p>Mathematical Expressions — Mixed Delimiters with Escape Support</p>
+  <div class="meta-row">
+    <span class="meta-chip">Project Code: 93</span>
+    <span class="meta-chip">Domain: Mathematical Expressions</span>
+    <span class="meta-chip">Xhule Metaj &amp; Elvis Sula</span>
+    <span class="meta-chip">Option B — Python PDA Simulator</span>
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="showTab('diagram')">PDA Diagram</button>
+  <button onclick="showTab('transitions')">Transition Table</button>
+  <button onclick="showTab('simulator')">Interactive Simulator</button>
+  <button onclick="showTab('cfg')">CFG</button>
+  <button onclick="showTab('proof')">Correctness Proof</button>
+  <button onclick="showTab('tests')">Test Cases</button>
+</nav>
+
+<main>
+
+<!-- ============ TAB: DIAGRAM ============ -->
+<div id="tab-diagram" class="tab-panel active">
+  <div class="section-title">Pushdown Automaton State Diagram</div>
+  <div class="card">
+    <svg id="pda-svg" viewBox="0 0 860 440" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#4b5563"/>
+        </marker>
+        <marker id="arrow-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#3b82f6"/>
+        </marker>
+        <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+        </marker>
+        <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#ef4444"/>
+        </marker>
+        <marker id="arrow-yellow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
+        </marker>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <radialGradient id="g-q0" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#1d3a6e"/>
+          <stop offset="100%" stop-color="#0d1a3a"/>
+        </radialGradient>
+        <radialGradient id="g-acc" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#064e3b"/>
+          <stop offset="100%" stop-color="#022c22"/>
+        </radialGradient>
+        <radialGradient id="g-rej" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#7f1d1d"/>
+          <stop offset="100%" stop-color="#450a0a"/>
+        </radialGradient>
+        <radialGradient id="g-esc" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#78350f"/>
+          <stop offset="100%" stop-color="#3c1a05"/>
+        </radialGradient>
+      </defs>
+
+      <!-- Grid dots background -->
+      <pattern id="dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+        <circle cx="12" cy="12" r="0.8" fill="#1a2540"/>
+      </pattern>
+      <rect width="860" height="440" fill="url(#dots)"/>
+
+      <!-- START arrow -->
+      <line x1="30" y1="220" x2="88" y2="220" stroke="#4b5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <text x="14" y="215" fill="#64748b" font-size="9" font-family="JetBrains Mono,monospace">start</text>
+
+      <!-- STATE q0 (center-left) -->
+      <circle cx="150" cy="220" r="50" fill="url(#g-q0)" stroke="#3b82f6" stroke-width="2" filter="url(#glow)"/>
+      <text x="150" y="215" text-anchor="middle" fill="#93c5fd" font-family="JetBrains Mono,monospace" font-size="16" font-weight="bold">q₀</text>
+      <text x="150" y="232" text-anchor="middle" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="9">scan</text>
+
+      <!-- Self-loop on q0: open delimiter -->
+      <path d="M 115 175 C 90 120 210 120 185 175" fill="none" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+      <text x="150" y="108" text-anchor="middle" fill="#60a5fa" font-family="JetBrains Mono,monospace" font-size="9">read ( [ {</text>
+      <text x="150" y="120" text-anchor="middle" fill="#60a5fa" font-family="JetBrains Mono,monospace" font-size="9">→ push d</text>
+
+      <!-- Self-loop on q0: close delimiter -->
+      <path d="M 186 258 C 220 310 80 310 114 258" fill="none" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+      <text x="150" y="335" text-anchor="middle" fill="#60a5fa" font-family="JetBrains Mono,monospace" font-size="9">read ) ] }</text>
+      <text x="150" y="347" text-anchor="middle" fill="#60a5fa" font-family="JetBrains Mono,monospace" font-size="9">→ pop if match</text>
+
+      <!-- Self-loop on q0: math/literal -->
+      <path d="M 102 190 C 40 155 40 285 102 250" fill="none" stroke="#6366f1" stroke-width="1.3" marker-end="url(#arrow-blue)"/>
+      <text x="26" y="215" text-anchor="middle" fill="#818cf8" font-family="JetBrains Mono,monospace" font-size="8">digit/letter</text>
+      <text x="26" y="226" text-anchor="middle" fill="#818cf8" font-family="JetBrains Mono,monospace" font-size="8">op/ws</text>
+      <text x="26" y="237" text-anchor="middle" fill="#818cf8" font-family="JetBrains Mono,monospace" font-size="8">no change</text>
+
+      <!-- q0 → q_esc -->
+      <line x1="200" y1="220" x2="370" y2="140" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arrow-yellow)"/>
+      <text x="278" y="165" text-anchor="middle" fill="#fbbf24" font-family="JetBrains Mono,monospace" font-size="9">read \</text>
+      <text x="278" y="176" text-anchor="middle" fill="#fbbf24" font-family="JetBrains Mono,monospace" font-size="9">→ no stack change</text>
+
+      <!-- STATE q_esc -->
+      <circle cx="430" cy="120" r="50" fill="url(#g-esc)" stroke="#f59e0b" stroke-width="2" filter="url(#glow)"/>
+      <text x="430" y="115" text-anchor="middle" fill="#fde68a" font-family="JetBrains Mono,monospace" font-size="13" font-weight="bold">q_esc</text>
+      <text x="430" y="131" text-anchor="middle" fill="#92400e" font-family="JetBrains Mono,monospace" font-size="9">escape mode</text>
+
+      <!-- q_esc → q0: consume any -->
+      <path d="M 380 120 C 310 90 260 150 200 195" fill="none" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arrow-yellow)" stroke-dasharray="5 3"/>
+      <text x="285" y="118" text-anchor="middle" fill="#fbbf24" font-family="JetBrains Mono,monospace" font-size="9">any symbol</text>
+      <text x="285" y="130" text-anchor="middle" fill="#fbbf24" font-family="JetBrains Mono,monospace" font-size="9">(literal, no stack)</text>
+
+      <!-- q_esc → q_reject: ε at end -->
+      <line x1="480" y1="120" x2="640" y2="300" stroke="#ef4444" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arrow-red)"/>
+      <text x="572" y="215" text-anchor="middle" fill="#f87171" font-family="JetBrains Mono,monospace" font-size="9">ε (dangling escape)</text>
+
+      <!-- q0 → q_accept: input empty, stack = $ -->
+      <line x1="200" y1="240" x2="360" y2="310" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)"/>
+      <text x="264" y="290" text-anchor="middle" fill="#34d399" font-family="JetBrains Mono,monospace" font-size="9">ε, stack = $</text>
+      <text x="264" y="301" text-anchor="middle" fill="#34d399" font-family="JetBrains Mono,monospace" font-size="9">→ Accept</text>
+
+      <!-- STATE q_accept -->
+      <circle cx="430" cy="340" r="50" fill="url(#g-acc)" stroke="#10b981" stroke-width="2.5" filter="url(#glow)"/>
+      <circle cx="430" cy="340" r="43" fill="none" stroke="#10b981" stroke-width="1" opacity="0.5"/>
+      <text x="430" y="333" text-anchor="middle" fill="#6ee7b7" font-family="JetBrains Mono,monospace" font-size="13" font-weight="bold">q_acc</text>
+      <text x="430" y="350" text-anchor="middle" fill="#065f46" font-family="JetBrains Mono,monospace" font-size="9">ACCEPT</text>
+
+      <!-- q0 → q_reject: mismatch / illegal -->
+      <line x1="200" y1="210" x2="640" y2="310" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrow-red)" stroke-dasharray="6 3"/>
+      <text x="430" y="246" text-anchor="middle" fill="#f87171" font-family="JetBrains Mono,monospace" font-size="9">mismatch / illegal symbol</text>
+      <text x="430" y="257" text-anchor="middle" fill="#f87171" font-family="JetBrains Mono,monospace" font-size="9">empty stack + closer / ε+stack≠$</text>
+
+      <!-- STATE q_reject -->
+      <circle cx="710" cy="340" r="50" fill="url(#g-rej)" stroke="#ef4444" stroke-width="2.5" filter="url(#glow)"/>
+      <circle cx="710" cy="340" r="43" fill="none" stroke="#ef4444" stroke-width="1" opacity="0.5"/>
+      <text x="710" y="333" text-anchor="middle" fill="#fca5a5" font-family="JetBrains Mono,monospace" font-size="13" font-weight="bold">q_rej</text>
+      <text x="710" y="350" text-anchor="middle" fill="#7f1d1d" font-family="JetBrains Mono,monospace" font-size="9">REJECT</text>
+
+      <!-- Legend -->
+      <rect x="640" y="20" width="200" height="120" rx="8" fill="#111827" stroke="#1f2d47"/>
+      <text x="740" y="40" text-anchor="middle" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="9" font-weight="bold">LEGEND</text>
+      <line x1="655" y1="55" x2="695" y2="55" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+      <text x="700" y="59" fill="#93c5fd" font-family="JetBrains Mono,monospace" font-size="8">push / pop / no-op</text>
+      <line x1="655" y1="75" x2="695" y2="75" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arrow-yellow)"/>
+      <text x="700" y="79" fill="#fbbf24" font-family="JetBrains Mono,monospace" font-size="8">escape transition</text>
+      <line x1="655" y1="95" x2="695" y2="95" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)"/>
+      <text x="700" y="99" fill="#34d399" font-family="JetBrains Mono,monospace" font-size="8">accept transition</text>
+      <line x1="655" y1="115" x2="695" y2="115" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arrow-red)"/>
+      <text x="700" y="119" fill="#f87171" font-family="JetBrains Mono,monospace" font-size="8">reject transition</text>
+
+      <!-- Stack alphabet -->
+      <rect x="640" y="155" width="200" height="75" rx="8" fill="#111827" stroke="#1f2d47"/>
+      <text x="740" y="174" text-anchor="middle" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="9" font-weight="bold">STACK ALPHABET Γ</text>
+      <text x="740" y="192" text-anchor="middle" fill="#a78bfa" font-family="JetBrains Mono,monospace" font-size="12" font-weight="bold">{ $ ,  (  ,  [  ,  { }</text>
+      <text x="740" y="208" text-anchor="middle" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="8">$ = bottom marker</text>
+      <text x="740" y="221" text-anchor="middle" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="8">others = opening delimiters</text>
+    </svg>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <h3>States</h3>
+      <table>
+        <tr><th>State</th><th>Description</th><th>Type</th></tr>
+        <tr><td><span class="badge badge-blue">q0</span></td><td>Main scan state</td><td>Start</td></tr>
+        <tr><td><span class="badge badge-yellow">q_esc</span></td><td>After reading backslash</td><td>Intermediate</td></tr>
+        <tr><td><span class="badge badge-green">q_accept</span></td><td>Input exhausted, stack = $</td><td>Accept</td></tr>
+        <tr><td><span class="badge badge-red">q_reject</span></td><td>Invalid transition</td><td>Reject</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Stack Alphabet Γ</h3>
+      <table>
+        <tr><th>Symbol</th><th>Meaning</th></tr>
+        <tr><td><code>$</code></td><td>Bottom-of-stack marker (initial)</td></tr>
+        <tr><td><code>(</code></td><td>Unmatched open parenthesis</td></tr>
+        <tr><td><code>[</code></td><td>Unmatched open square bracket</td></tr>
+        <tr><td><code>{</code></td><td>Unmatched open curly brace</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TAB: TRANSITIONS ============ -->
+<div id="tab-transitions" class="tab-panel">
+  <div class="section-title">Transition Function δ</div>
+
+  <div class="card">
+    <h3>From state q₀</h3>
+    <div class="tbl-wrap">
+    <table>
+      <tr>
+        <th>Input Read</th>
+        <th>Stack Top</th>
+        <th>Next State</th>
+        <th>Stack Action</th>
+        <th>Notes</th>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">( or [ or {</span></td>
+        <td>any</td>
+        <td><span class="badge badge-blue">q0</span></td>
+        <td>push d (same symbol)</td>
+        <td>Open delimiter — push onto stack</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">)</span></td>
+        <td><code>(</code></td>
+        <td><span class="badge badge-blue">q0</span></td>
+        <td>pop <code>(</code></td>
+        <td>Matching close</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">]</span></td>
+        <td><code>[</code></td>
+        <td><span class="badge badge-blue">q0</span></td>
+        <td>pop <code>[</code></td>
+        <td>Matching close</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">}</span></td>
+        <td><code>{</code></td>
+        <td><span class="badge badge-blue">q0</span></td>
+        <td>pop <code>{</code></td>
+        <td>Matching close</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">) or ] or }</span></td>
+        <td>wrong / <code>$</code></td>
+        <td><span class="badge badge-red">q_reject</span></td>
+        <td>—</td>
+        <td>Mismatched or empty stack</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-yellow">\</span></td>
+        <td>any</td>
+        <td><span class="badge badge-yellow">q_esc</span></td>
+        <td>no change</td>
+        <td>Enter escape mode</td>
+      </tr>
+      <tr>
+        <td>digit, letter, op, ws</td>
+        <td>any</td>
+        <td><span class="badge badge-blue">q0</span></td>
+        <td>no change</td>
+        <td>Math terminal — pass through</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-green">ε (end of input)</span></td>
+        <td><code>$</code> only</td>
+        <td><span class="badge badge-green">q_accept</span></td>
+        <td>—</td>
+        <td>All delimiters matched</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">ε (end of input)</span></td>
+        <td>else</td>
+        <td><span class="badge badge-red">q_reject</span></td>
+        <td>—</td>
+        <td>Unmatched openers remain</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">illegal char</span></td>
+        <td>any</td>
+        <td><span class="badge badge-red">q_reject</span></td>
+        <td>—</td>
+        <td>Symbol not in Σ</td>
+      </tr>
+    </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>From state q_esc</h3>
+    <div class="tbl-wrap">
+    <table>
+      <tr>
+        <th>Input Read</th>
+        <th>Stack Top</th>
+        <th>Next State</th>
+        <th>Stack Action</th>
+        <th>Notes</th>
+      </tr>
+      <tr>
+        <td>any symbol</td>
+        <td>any</td>
+        <td><span class="badge badge-blue">q0</span></td>
+        <td>no change</td>
+        <td>Consumed as literal — not a delimiter</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">ε (end of input)</span></td>
+        <td>any</td>
+        <td><span class="badge badge-red">q_reject</span></td>
+        <td>—</td>
+        <td>Dangling backslash at end</td>
+      </tr>
+    </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Stack trace example — Input: <code>{ [ ( 1+2 ) ] }</code></h3>
+    <div class="tbl-wrap">
+    <table>
+      <tr><th>Step</th><th>Read</th><th>Stack (bottom → top)</th><th>Action</th></tr>
+      <tr><td>0</td><td>—</td><td><code>$</code></td><td>Start</td></tr>
+      <tr><td>1</td><td><code>{</code></td><td><code>$ {</code></td><td>Push {</td></tr>
+      <tr><td>2</td><td><code>[</code></td><td><code>$ { [</code></td><td>Push [</td></tr>
+      <tr><td>3</td><td><code>(</code></td><td><code>$ { [ (</code></td><td>Push (</td></tr>
+      <tr><td>4</td><td><code>1+2</code></td><td><code>$ { [ (</code></td><td>No change (math literals)</td></tr>
+      <tr><td>5</td><td><code>)</code></td><td><code>$ { [</code></td><td>Pop ( — matches )</td></tr>
+      <tr><td>6</td><td><code>]</code></td><td><code>$ {</code></td><td>Pop [ — matches ]</td></tr>
+      <tr><td>7</td><td><code>}</code></td><td><code>$</code></td><td>Pop { — matches }</td></tr>
+      <tr><td>8</td><td>ε</td><td><code>$</code></td><td>Stack = $ → <strong>ACCEPT</strong></td></tr>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TAB: SIMULATOR ============ -->
+<div id="tab-simulator" class="tab-panel">
+  <div class="section-title">Interactive PDA Simulator</div>
+
+  <div class="card">
+    <h3>Input Expression</h3>
+    <div class="presets">
+      <span class="presets-label">Quick examples:</span>
+      <button class="preset-btn" onclick="setInput('(1+2)')">✓ (1+2)</button>
+      <button class="preset-btn" onclick="setInput('([{3.14}])')">✓ ([{3.14}])</button>
+      <button class="preset-btn" onclick="setInput('a*(b+[c])')">✓ a*(b+[c])</button>
+      <button class="preset-btn" onclick="setInput('x+\\(y\\)')">✓ x+\(y\)</button>
+      <button class="preset-btn" onclick="setInput('(1+2')">✗ (1+2</button>
+      <button class="preset-btn" onclick="setInput('([)]')">✗ ([)]</button>
+      <button class="preset-btn" onclick="setInput('(1+2))')">✗ (1+2))</button>
+      <button class="preset-btn" onclick="setInput('(1@2)')">✗ (1@2)</button>
+    </div>
+    <div class="sim-input-row">
+      <input id="sim-input" type="text" placeholder='Type expression, e.g. (a+[b*{c}])' value="([{3.14}])"/>
+      <button onclick="runSim()">▶ Run</button>
+    </div>
+    <div id="verdict"></div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <h3>Stack Visualization</h3>
+      <div id="stack-viz" class="stack-anim"></div>
+    </div>
+    <div class="card">
+      <h3>Current State</h3>
+      <div id="state-display" style="font-family:var(--mono);font-size:2.5rem;font-weight:800;text-align:center;padding:1rem 0;color:var(--accent)">q0</div>
+      <div id="current-action" style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);text-align:center;min-height:2rem"></div>
+      <div id="remaining-input" style="font-family:var(--mono);font-size:0.75rem;color:var(--text);text-align:center;margin-top:0.5rem;word-break:break-all;"></div>
+    </div>
+  </div>
+
+  <div class="card" id="trace-container">
+    <h3>Step-by-step Execution Trace</h3>
+    <div class="ctrl-row">
+      <button class="ctrl-btn" id="btn-prev" onclick="stepTo(currentStep-1)" disabled>← Prev</button>
+      <button class="ctrl-btn" id="btn-next" onclick="stepTo(currentStep+1)">Next →</button>
+      <button class="ctrl-btn" onclick="stepTo(0)">⏮ First</button>
+      <button class="ctrl-btn" onclick="stepTo(allSteps.length-1)">⏭ Last</button>
+      <button class="ctrl-btn" onclick="autoPlay()">▶ Auto</button>
+      <span class="step-indicator" id="step-ind">Step 0 / 0</span>
+    </div>
+    <div id="trace-body"></div>
+  </div>
+</div>
+
+<!-- ============ TAB: CFG ============ -->
+<div id="tab-cfg" class="tab-panel">
+  <div class="section-title">Context-Free Grammar</div>
+  <div class="card">
+    <h3>CFG for Mixed Nested Mathematical Expressions</h3>
+    <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1.2rem;">Non-terminals: S (start / expression sequence), T (one term), L (literal sequence), M (single math character), ESC (escape pair)</p>
+    <div class="cfg-rule">
+      <span class="cfg-lhs">S</span><span class="cfg-arrow">→</span>
+      <div>
+        <div class="cfg-rhs">ε <span class="cfg-comment">// empty string accepted</span></div>
+        <div class="cfg-rhs">T S <span class="cfg-comment">// term followed by more expression</span></div>
+      </div>
+    </div>
+    <div class="cfg-rule">
+      <span class="cfg-lhs">T</span><span class="cfg-arrow">→</span>
+      <div>
+        <div class="cfg-rhs">( S ) <span class="cfg-comment">// parenthesized sub-expression</span></div>
+        <div class="cfg-rhs">[ S ] <span class="cfg-comment">// bracket sub-expression</span></div>
+        <div class="cfg-rhs">{ S } <span class="cfg-comment">// brace sub-expression</span></div>
+        <div class="cfg-rhs">L <span class="cfg-comment">// sequence of math literals</span></div>
+      </div>
+    </div>
+    <div class="cfg-rule">
+      <span class="cfg-lhs">L</span><span class="cfg-arrow">→</span>
+      <div>
+        <div class="cfg-rhs">ε <span class="cfg-comment">// empty literal sequence</span></div>
+        <div class="cfg-rhs">M L <span class="cfg-comment">// one math char followed by more</span></div>
+      </div>
+    </div>
+    <div class="cfg-rule">
+      <span class="cfg-lhs">M</span><span class="cfg-arrow">→</span>
+      <div>
+        <div class="cfg-rhs">digit | letter | operator | ws <span class="cfg-comment">// math terminals</span></div>
+        <div class="cfg-rhs">ESC <span class="cfg-comment">// escaped symbol (Feature 2)</span></div>
+      </div>
+    </div>
+    <div class="cfg-rule">
+      <span class="cfg-lhs">ESC</span><span class="cfg-arrow">→</span>
+      <div>
+        <div class="cfg-rhs">\ ( &nbsp;|&nbsp; \ ) &nbsp;|&nbsp; \ [ &nbsp;|&nbsp; \ ] &nbsp;|&nbsp; \ { &nbsp;|&nbsp; \ } &nbsp;|&nbsp; \ \  <span class="cfg-comment">// any escaped delimiter or backslash</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Input Alphabet Σ</h3>
+    <table>
+      <tr><th>Category</th><th>Symbols</th></tr>
+      <tr><td>Open delimiters</td><td><code>( [ {</code></td></tr>
+      <tr><td>Close delimiters</td><td><code>) ] }</code></td></tr>
+      <tr><td>Escape</td><td><code>\</code></td></tr>
+      <tr><td>Digits</td><td><code>0–9</code></td></tr>
+      <tr><td>Letters</td><td><code>a–z, A–Z, _</code></td></tr>
+      <tr><td>Operators</td><td><code>+ - * / . ^</code></td></tr>
+      <tr><td>Whitespace</td><td>space, tab</td></tr>
+    </table>
+    <p style="margin-top:1rem;font-size:0.78rem;color:var(--muted);">Any character not in Σ causes immediate rejection. Illegal example: <code>@</code>, <code>#</code>, <code>!</code></p>
+  </div>
+
+  <div class="card">
+    <h3>Non-CFL Limitation</h3>
+    <p style="font-size:0.82rem;color:var(--muted);line-height:1.7;">
+      Our PDA handles <strong style="color:var(--text)">Dyck-style mixed bracket matching</strong> — this is exactly context-free. However, if we required the total count of <code>(</code> to equal the total count of <code>[</code> globally (e.g. the language a<sup>n</sup>b<sup>n</sup>c<sup>n</sup>), this would be <strong style="color:var(--red)">beyond CFL</strong> and would require a Turing machine. Our design intentionally stays within this well-defined CFL boundary.
+    </p>
+  </div>
+</div>
+
+<!-- ============ TAB: PROOF ============ -->
+<div id="tab-proof" class="tab-panel">
+  <div class="section-title">Correctness Proof (Sketch)</div>
+
+  <div class="card">
+    <h3>Claim</h3>
+    <p style="font-size:0.85rem;color:var(--muted);line-height:1.7;">
+      PDA <strong style="color:var(--text)">M</strong> accepts exactly the language <strong style="color:var(--text)">L</strong> of strings whose mixed delimiters <code>()</code>, <code>[]</code>, <code>{}</code> are properly nested, whose non-delimiter symbols belong to the restricted math alphabet Σ, and whose escape sequences <code>\x</code> treat <code>x</code> as a literal.
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>Soundness — every accepted string ∈ L</h3>
+    <div style="margin-bottom:0.8rem;padding:0.8rem;background:rgba(59,130,246,0.08);border-left:3px solid var(--accent);border-radius:4px;font-size:0.8rem;color:var(--muted);">
+      <strong style="color:var(--accent2)">Invariant I:</strong> At any step in q₀, the stack (above $) is a sequence of opening delimiters appearing in the input prefix in order, each corresponding to an unmatched opener.
+    </div>
+    <div class="proof-step">
+      <div class="proof-num">1</div>
+      <div class="proof-body">
+        <strong>Base case</strong>
+        <p>Initially stack = {$}; no openers yet — invariant holds trivially.</p>
+      </div>
+    </div>
+    <div class="proof-step">
+      <div class="proof-num">2</div>
+      <div class="proof-body">
+        <strong>Push step (open delimiter)</strong>
+        <p>Reading <code>( [ {</code> appends the matching opener to the stack — invariant maintained.</p>
+      </div>
+    </div>
+    <div class="proof-step">
+      <div class="proof-num">3</div>
+      <div class="proof-body">
+        <strong>Pop step (close delimiter)</strong>
+        <p>Reading a closer removes the top only if it is the matching opener; otherwise → q_reject. We never pop a non-matching symbol, so invariant is preserved on success.</p>
+      </div>
+    </div>
+    <div class="proof-step">
+      <div class="proof-num">4</div>
+      <div class="proof-body">
+        <strong>Escape step</strong>
+        <p>In q_esc, one character is consumed with no stack change. Delimiters in escaped form cannot affect Invariant I.</p>
+      </div>
+    </div>
+    <div class="proof-step">
+      <div class="proof-num">5</div>
+      <div class="proof-body">
+        <strong>Literal step</strong>
+        <p>Math characters (digit, letter, op, ws) do not alter the stack — invariant trivially maintained.</p>
+      </div>
+    </div>
+    <div class="proof-step">
+      <div class="proof-num">6</div>
+      <div class="proof-body">
+        <strong>Conclusion</strong>
+        <p>On acceptance, input is empty and stack = {$}, so every opener was matched. Illegal symbols cause rejection, so accepted strings use only allowed terminals. Therefore every accepted string satisfies L.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Completeness — every w ∈ L is accepted</h3>
+    <div class="proof-step">
+      <div class="proof-num">1</div>
+      <div class="proof-body">
+        <strong>Well-nested delimiters</strong>
+        <p>Each opener in w triggers a push. Since w is well-nested, when a closer appears the stack top is exactly its partner, so the PDA pops instead of rejecting.</p>
+      </div>
+    </div>
+    <div class="proof-step">
+      <div class="proof-num">2</div>
+      <div class="proof-body">
+        <strong>Escape sequences</strong>
+        <p>Each pair <code>\x</code> moves to q_esc and consumes x without stack change — legal in L.</p>
+      </div>
+    </div>
+    <div class="proof-step">
+      <div class="proof-num">3</div>
+      <div class="proof-body">
+        <strong>Math terminals</strong>
+        <p>Characters only advance the read head, leaving the stack intact.</p>
+      </div>
+    </div>
+    <div class="proof-step">
+      <div class="proof-num">4</div>
+      <div class="proof-body">
+        <strong>Termination</strong>
+        <p>At end of input, no unmatched openers remain (w ∈ L), so stack = {$} and the PDA enters q_accept. Therefore w is accepted. ∎</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Rejection cases</h3>
+    <table>
+      <tr><th>Condition</th><th>Cause</th></tr>
+      <tr><td>Closer ≠ stack top</td><td>Mismatched delimiter nesting</td></tr>
+      <tr><td>Closer with stack = {$}</td><td>Extra closing delimiter</td></tr>
+      <tr><td>Input ends, stack ≠ {$}</td><td>Unclosed opening delimiter</td></tr>
+      <tr><td><code>\</code> at end of input</td><td>Dangling escape sequence</td></tr>
+      <tr><td>Symbol ∉ Σ</td><td>Illegal character</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ============ TAB: TESTS ============ -->
+<div id="tab-tests" class="tab-panel">
+  <div class="section-title">Required Test Cases</div>
+
+  <div class="card">
+    <h3>Accepted Strings (5 required)</h3>
+    <div class="tbl-wrap">
+    <table>
+      <tr><th>#</th><th>Input</th><th>Type</th><th>Decision</th><th>Explanation</th></tr>
+      <tr>
+        <td>1</td><td><code>(1+2)</code></td><td>Simple valid</td>
+        <td><span class="badge badge-green">ACCEPT</span></td>
+        <td>Single matched pair, math content inside. Stack: $ → $( → $ → Accept</td>
+      </tr>
+      <tr>
+        <td>2</td><td><code>([{3.14}])</code></td><td>Deep nested</td>
+        <td><span class="badge badge-green">ACCEPT</span></td>
+        <td>Three levels of mixed nesting. Stack grows to ${([ then collapses back to $</td>
+      </tr>
+      <tr>
+        <td>3</td><td><code>a*(b+[c])</code></td><td>Mixed operators</td>
+        <td><span class="badge badge-green">ACCEPT</span></td>
+        <td>Math chars pass through; delimiters properly matched in nested order</td>
+      </tr>
+      <tr>
+        <td>4</td><td><code>x+\(y\)</code></td><td>Escaped delimiters</td>
+        <td><span class="badge badge-green">ACCEPT</span></td>
+        <td>\ causes q_esc; ( and ) consumed as literals, no stack change</td>
+      </tr>
+      <tr>
+        <td>5</td><td><code>  </code> (empty/ws)</td><td>Boundary</td>
+        <td><span class="badge badge-green">ACCEPT</span></td>
+        <td>No delimiters → stack stays at $ → immediate accept</td>
+      </tr>
+    </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Rejected Strings (3 required)</h3>
+    <div class="tbl-wrap">
+    <table>
+      <tr><th>#</th><th>Input</th><th>Type</th><th>Decision</th><th>Failure Point</th></tr>
+      <tr>
+        <td>1</td><td><code>(1+2</code></td><td>Incomplete / unclosed</td>
+        <td><span class="badge badge-red">REJECT</span></td>
+        <td>Input exhausted with <code>(</code> still on stack. Unmatched opener remains.</td>
+      </tr>
+      <tr>
+        <td>2</td><td><code>([)]</code></td><td>Mismatched order</td>
+        <td><span class="badge badge-red">REJECT</span></td>
+        <td>Step 3: stack top = <code>[</code>, read <code>)</code>. Expected <code>]</code> but got <code>)</code> → immediate reject</td>
+      </tr>
+      <tr>
+        <td>3</td><td><code>(1+2))</code></td><td>Extra closer</td>
+        <td><span class="badge badge-red">REJECT</span></td>
+        <td>Step 6: second <code>)</code> finds stack = {$}. No opener to match → reject</td>
+      </tr>
+    </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Detailed Trace: Accept — <code>([{3.14}])</code></h3>
+    <div class="tbl-wrap">
+    <table>
+      <tr><th>Step</th><th>State</th><th>Remaining Input</th><th>Stack (bottom→top)</th><th>Action</th></tr>
+      <tr><td>0</td><td><span class="badge badge-blue">q0</span></td><td><code>([{3.14}])</code></td><td><code>$</code></td><td>Start</td></tr>
+      <tr><td>1</td><td><span class="badge badge-blue">q0</span></td><td><code>[{3.14}])</code></td><td><code>$(</code></td><td>Read '(' → push '('</td></tr>
+      <tr><td>2</td><td><span class="badge badge-blue">q0</span></td><td><code>{3.14}])</code></td><td><code>$([</code></td><td>Read '[' → push '['</td></tr>
+      <tr><td>3</td><td><span class="badge badge-blue">q0</span></td><td><code>3.14}])</code></td><td><code>$([{</code></td><td>Read '{' → push '{'</td></tr>
+      <tr><td>4–7</td><td><span class="badge badge-blue">q0</span></td><td><code>}])</code></td><td><code>$([{</code></td><td>Read '3','.','1','4' → no stack change</td></tr>
+      <tr><td>8</td><td><span class="badge badge-blue">q0</span></td><td><code>])</code></td><td><code>$([</code></td><td>Read '}' → pop '{'</td></tr>
+      <tr><td>9</td><td><span class="badge badge-blue">q0</span></td><td><code>)</code></td><td><code>$(</code></td><td>Read ']' → pop '['</td></tr>
+      <tr><td>10</td><td><span class="badge badge-blue">q0</span></td><td><code>ε</code></td><td><code>$</code></td><td>Read ')' → pop '('</td></tr>
+      <tr><td>11</td><td><span class="badge badge-green">q_accept</span></td><td><code>ε</code></td><td><code>$</code></td><td>Stack = $ → <strong>ACCEPT</strong></td></tr>
+    </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Detailed Trace: Reject — <code>([)]</code></h3>
+    <div class="tbl-wrap">
+    <table>
+      <tr><th>Step</th><th>State</th><th>Remaining Input</th><th>Stack (bottom→top)</th><th>Action</th></tr>
+      <tr><td>0</td><td><span class="badge badge-blue">q0</span></td><td><code>([)]</code></td><td><code>$</code></td><td>Start</td></tr>
+      <tr><td>1</td><td><span class="badge badge-blue">q0</span></td><td><code>[)]</code></td><td><code>$(</code></td><td>Read '(' → push '('</td></tr>
+      <tr><td>2</td><td><span class="badge badge-blue">q0</span></td><td><code>)]</code></td><td><code>$([</code></td><td>Read '[' → push '['</td></tr>
+      <tr><td>3</td><td><span class="badge badge-red">q_reject</span></td><td><code>)]</code></td><td><code>$([</code></td><td>Read ')' — expected ']' (top=[) → REJECT</td></tr>
+    </table>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ─── TAB NAVIGATION ───────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  const btns = document.querySelectorAll('nav button');
+  const order = ['diagram','transitions','simulator','cfg','proof','tests'];
+  btns[order.indexOf(name)].classList.add('active');
+}
+
+// ─── PDA SIMULATOR ────────────────────────────────────────────────
+const OPEN_TO_CLOSE = {'(':')', '[':']', '{':'}'};
+const CLOSE_TO_OPEN = {')':'(', ']':'[', '}':'{'};
+const MATH_CHARS = new Set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789+-*/.^ \t');
+
+function simulatePDA(input) {
+  let state = 'q0', stack = ['$'], steps = [];
+  let idx = 0;
+
+  function record(action) {
+    steps.push({ step: steps.length, state, remaining: input.slice(idx), stack: [...stack], action });
+  }
+  record('Start');
+
+  while (true) {
+    if (state === 'q_accept' || state === 'q_reject') break;
+
+    if (state === 'q_esc') {
+      if (idx >= input.length) {
+        state = 'q_reject';
+        record('Dangling escape at end of input → Reject');
+        break;
+      }
+      const ch = input[idx++];
+      state = 'q0';
+      record(`Escape consumed; literal '${ch}' (no stack change)`);
+      continue;
+    }
+
+    // q0
+    if (idx >= input.length) {
+      if (stack.length === 1 && stack[0] === '$') {
+        state = 'q_accept';
+        record('Input exhausted; stack = $ → Accept');
+      } else {
+        state = 'q_reject';
+        record(`Input exhausted with unmatched delimiters: [${stack.slice(1).join(', ')}] → Reject`);
+      }
+      continue;
+    }
+
+    const ch = input[idx];
+    if (ch === '\\') {
+      idx++;
+      state = 'q_esc';
+      record(`Read '\\\\' → enter escape state`);
+      continue;
+    }
+    if (ch in OPEN_TO_CLOSE) {
+      stack.push(ch);
+      idx++;
+      record(`Read '${ch}' → push '${ch}'`);
+      continue;
+    }
+    if (ch in CLOSE_TO_OPEN) {
+      const expected = CLOSE_TO_OPEN[ch];
+      if (stack.length < 2) {
+        state = 'q_reject';
+        idx++;
+        record(`Read '${ch}' — stack empty (only $); no opener to match → Reject`);
+        continue;
+      }
+      const top = stack[stack.length - 1];
+      if (top !== expected) {
+        state = 'q_reject';
+        record(`Read '${ch}' — stack top '${top}', expected '${OPEN_TO_CLOSE[top]}' → Mismatched → Reject`);
+        continue;
+      }
+      stack.pop();
+      idx++;
+      record(`Read '${ch}' → pop '${top}'`);
+      continue;
+    }
+    if (MATH_CHARS.has(ch)) {
+      idx++;
+      record(`Read math/literal '${ch}' → no stack change`);
+      continue;
+    }
+    state = 'q_reject';
+    record(`Illegal symbol '${ch}' — not in alphabet Σ → Reject`);
+    idx++;
+  }
+  return { accepted: state === 'q_accept', steps };
+}
+
+let allSteps = [], currentStep = 0, autoTimer = null;
+
+function setInput(v) { document.getElementById('sim-input').value = v; }
+
+function runSim() {
+  const input = document.getElementById('sim-input').value;
+  const result = simulatePDA(input);
+  allSteps = result.steps;
+  currentStep = 0;
+
+  const vEl = document.getElementById('verdict');
+  vEl.className = result.accepted ? 'accept' : 'reject';
+  vEl.innerHTML = result.accepted
+    ? '✅ &nbsp; ACCEPT — all delimiters matched, string ∈ L'
+    : '❌ &nbsp; REJECT — ' + (allSteps[allSteps.length-1]?.action || 'invalid input');
+
+  document.getElementById('trace-container').style.display = 'block';
+  buildTraceTable();
+  stepTo(allSteps.length - 1);
+}
+
+function buildTraceTable() {
+  const body = document.getElementById('trace-body');
+  body.innerHTML = '';
+
+  const header = document.createElement('div');
+  header.className = 'trace-row header-row';
+  header.innerHTML = '<span>#</span><span>State</span><span>Remaining</span><span>Stack</span><span class="act-col">Action</span>';
+  body.appendChild(header);
+
+  allSteps.forEach((s, i) => {
+    const row = document.createElement('div');
+    const isAcc = s.state === 'q_accept', isRej = s.state === 'q_reject', isEsc = s.state === 'q_esc';
+    row.className = 'trace-row' + (isAcc ? ' accept-row' : isRej ? ' reject-row' : '');
+    row.id = 'trace-row-' + i;
+    const stBadge = `<span class="state-badge ${isAcc?'q-accept':isRej?'q-reject':isEsc?'q-esc':''}">${s.state}</span>`;
+    const stackStr = [...s.stack].reverse().join('') || 'ε';
+    const rem = s.remaining === '' ? 'ε' : s.remaining.length > 14 ? s.remaining.slice(0,13)+'…' : s.remaining;
+    row.innerHTML = `<span>${s.step}</span>${stBadge}<code style="font-size:0.72rem">${rem}</code><code style="font-size:0.72rem">${stackStr}</code><span class="act-col" style="font-size:0.7rem;color:var(--muted)">${s.action}</span>`;
+    row.onclick = () => stepTo(i);
+    body.appendChild(row);
+  });
+}
+
+function stepTo(n) {
+  if (n < 0 || n >= allSteps.length) return;
+  currentStep = n;
+  const s = allSteps[n];
+
+  // highlight row
+  document.querySelectorAll('.trace-row').forEach(r => r.classList.remove('current'));
+  const row = document.getElementById('trace-row-' + n);
+  if (row) { row.classList.add('current'); row.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+
+  // stack viz
+  const viz = document.getElementById('stack-viz');
+  viz.innerHTML = '';
+  [...s.stack].forEach((sym, i) => {
+    const el = document.createElement('div');
+    el.className = 'stack-item' + (i === 0 ? ' bottom' : '');
+    el.textContent = sym;
+    viz.appendChild(el);
+  });
+
+  // state display
+  const sd = document.getElementById('state-display');
+  sd.textContent = s.state;
+  sd.style.color = s.state === 'q_accept' ? 'var(--green)' : s.state === 'q_reject' ? 'var(--red)' : s.state === 'q_esc' ? 'var(--yellow)' : 'var(--accent)';
+
+  document.getElementById('current-action').textContent = s.action;
+  document.getElementById('remaining-input').textContent = s.remaining ? `Remaining: "${s.remaining}"` : 'Remaining: ε (done)';
+
+  document.getElementById('btn-prev').disabled = n === 0;
+  document.getElementById('btn-next').disabled = n === allSteps.length - 1;
+  document.getElementById('step-ind').textContent = `Step ${n} / ${allSteps.length - 1}`;
+}
+
+function autoPlay() {
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; return; }
+  stepTo(0);
+  autoTimer = setInterval(() => {
+    if (currentStep >= allSteps.length - 1) { clearInterval(autoTimer); autoTimer = null; return; }
+    stepTo(currentStep + 1);
+  }, 700);
+}
+
+// Auto-run default on load
+window.addEventListener('load', () => runSim());
+</script>
+</body>
+</html>

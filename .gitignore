@@ -6,3 +6,6 @@ venv/
 .env
 .DS_Store
 *.jff.bak
+
+# Course handouts / local artifacts
+CEN350 Project Guide.pdf
